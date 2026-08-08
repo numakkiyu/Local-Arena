@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  BarChart3,
   BookOpenText,
   Command,
   Crosshair,
@@ -30,6 +31,7 @@ const TILES: Tile[] = [
   { view: "matchHistory", key: "match.history", icon: History },
   { view: "weaponPresets", key: "weapons.title", icon: Crosshair },
   { view: "presets", key: "pre.title", icon: SlidersHorizontal },
+  { view: "stats", key: "stats.globalHistory", icon: BarChart3 },
   { view: "commands", key: "cmd.title", icon: Command },
   { view: "guide", key: "nav.guide", icon: BookOpenText },
   { view: "settings", key: "set.title", icon: Settings2 },

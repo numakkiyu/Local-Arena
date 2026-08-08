@@ -58,6 +58,8 @@ const SUITE_OWNED_ROOTS: &[&str] = &[
     "addons/counterstrikesharp/plugins/PlayerKnifeCustomizer",
     "addons/counterstrikesharp/plugins/RayTraceImpl",
     "addons/counterstrikesharp/plugins/RoundDamageRecap",
+    "addons/counterstrikesharp/plugins/TeamLineupInjector",
+    "addons/counterstrikesharp/plugins/OfflineMatchTelemetry",
     "addons/counterstrikesharp/plugins/disabled/BotAI_for_Linux",
     "addons/counterstrikesharp/plugins/disabled/BotAimImprover_for_Linux",
     "addons/counterstrikesharp/plugins/disabled/CS2_ExecAfter",

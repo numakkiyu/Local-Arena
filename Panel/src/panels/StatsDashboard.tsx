@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BarChart3, Settings2 } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Bar, BarChart, Cell } from "recharts";
 import { api } from "../lib/api";
-import type { Cs2ssOverviewResponse, Cs2ssMatchSummary, Cs2ssPlayerDetailResponse, Cs2ssDmOverview } from "../data/cs2ssTypes";
+import type { Cs2ssOverviewResponse, Cs2ssPlayerDetailResponse, Cs2ssDmOverview, Cs2ssMatchWithStats } from "../data/cs2ssTypes";
 import { cs2ssCalcRating, cs2ssCalcAdr, cs2ssCalcKast } from "../data/cs2ssRating";
 import { cs2ssMapLabel } from "../data/cs2ssMaps";
 import StatsMatchHistory from "./StatsMatchHistory";
@@ -24,7 +24,7 @@ export default function StatsDashboard() {
   const [sub, setSub] = useState<SubView>("dashboard");
   const [selMatch, setSelMatch] = useState(0);
   const [data, setData] = useState<Cs2ssOverviewResponse | null>(null);
-  const [matches, setMatches] = useState<Cs2ssMatchSummary[]>([]);
+  const [matches, setMatches] = useState<Cs2ssMatchWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
   const [mode, setMode] = useState<"competitive" | "deathmatch">("competitive");
@@ -48,7 +48,7 @@ export default function StatsDashboard() {
         if (!cfgData.steamId) { setCfgInput(""); setCfgOpen(true); setLoading(false); return; }
         setPid(cfgData.steamId);
         try {
-          const [o, ms] = await Promise.all([api.getCs2ssOverview(csgo), api.listCs2ssMatches(csgo)]);
+const [o, ms] = await Promise.all([api.getCs2ssOverview(csgo), api.listCs2ssMatchesWithStats(csgo)]);
           if (c) return;
           setData(o); setMatches(ms);
         } catch {
@@ -88,7 +88,7 @@ export default function StatsDashboard() {
       setPid(cfgInput.trim());
       setCfgOpen(false);
       try {
-        const [o, ms] = await Promise.all([api.getCs2ssOverview(csgo), api.listCs2ssMatches(csgo)]);
+        const [o, ms] = await Promise.all([api.getCs2ssOverview(csgo), api.listCs2ssMatchesWithStats(csgo)]);
         setData(o); setMatches(ms);
       } catch {
         setData({ matchCount: 0, players: [] });
@@ -131,7 +131,11 @@ export default function StatsDashboard() {
   const po = data?.players.find(p => p.steamId === pid) ?? null;
   const tr = po?.totalRounds ?? 0;
   const tk = po?.kills ?? 0, td = po?.deaths ?? 0, ta = po?.assists ?? 0, tdm = po?.damage ?? 0, ths = po?.headshots ?? 0;
-  const rating = tr > 0 ? cs2ssCalcRating(tk, td, ta, tdm, ths, tr, { kastRounds: po?.kastRounds, tradeKills: po?.tradeKills, multikill2: po?.multikill2, multikill3: po?.multikill3, multikill4: po?.multikill4, multikill5: po?.multikill5, clutchAttempts: po?.clutchAttempts, clutchesWon: po?.clutchesWon }) : 0;
+  const rating = (pd?.matches ?? []).length > 0
+    ? (pd?.matches ?? []).reduce((s, m) => s + (m.roundsPlayed > 0
+        ? cs2ssCalcRating(m.totalKills, m.totalDeaths, m.totalAssists, m.totalDamage, m.totalHeadshotKills, m.roundsPlayed, { kastRounds: m.kastRounds, tradeKills: m.tradeKills, multikill2: m.multikill2, multikill3: m.multikill3, multikill4: m.multikill4, multikill5: m.multikill5, clutchAttempts: m.clutchAttempts, clutchesWon: m.clutchesWon })
+        : 0), 0) / (pd?.matches ?? []).length
+    : 0;
   const adr = cs2ssCalcAdr(tdm, tr);
   const kast = cs2ssCalcKast(po?.kastRounds ?? 0, tr);
 
@@ -213,7 +217,7 @@ export default function StatsDashboard() {
         <div className="stats-panel-block">
           <div className="stats-panel-block__title"><div><span>{t("stats.recent")}</span><h2>{t("stats.recentMatches")}</h2></div></div>
           {recent.length > 0 ? (
-            <table className="stats-table"><thead><tr><th>{t("stats.map")}</th><th>{t("stats.date")}</th><th>{t("stats.score")}</th><th>K/D/A</th><th>ADR</th><th>{t("stats.rating")}</th></tr></thead>
+<table className="stats-table"><thead><tr><th>{t("stats.map")}</th><th>{t("stats.date")}</th><th>{t("stats.score")}</th><th>K/D/A</th><th>ADR</th><th>{t("stats.rating")}</th></tr></thead>
               <tbody>{recent.map(m => (
                 <tr key={m.matchId} onClick={() => { setSelMatch(m.matchId); setSub("matchDetail"); }} style={{ cursor: "pointer" }}>
                   <td style={{ fontWeight: 600 }}>{cs2ssMapLabel(m.map)}</td><td style={{ color: "var(--text-secondary)", fontSize: 12 }}>{fmtD(m.startedAt)}</td>

@@ -25,6 +25,8 @@ import {
   type ModeInfo,
   type NadesValue,
   type PresetsState,
+  type TeamLineupState,
+  type TeamLineupInput,
   type InstallationInspection,
   type InstallPlan,
   type InstallTransactionResult,
@@ -43,10 +45,13 @@ export type Store = {
   mode: ModeInfo | null;
   botItems: BotItemsState | null;
   presets: PresetsState | null;
+  teamLineup: TeamLineupState | null;
+  timescaleToggleEnabled: boolean;
   /** Per-section "changed while CS2 running, pending restart" flags. Persisted,
    *  so each yellow light survives a full close/reopen of the panel. */
   aimPending: boolean;
   nadesPending: boolean;
+  teamLineupPending: boolean;
   modePending: boolean;
   difficultyPending: boolean;
   dropKnivesPending: boolean;
@@ -79,6 +84,8 @@ export type Store = {
   applyBotItem: (item: BotItemKey, on: boolean) => Promise<BotItemsState | null>;
   applyAim: (value: AimValue) => Promise<PresetsState | null>;
   applyNades: (value: NadesValue) => Promise<PresetsState | null>;
+  applyTeamLineup: (input: TeamLineupInput) => Promise<TeamLineupState | null>;
+  applyTimescaleToggle: (enabled: boolean) => Promise<boolean>;
   applyDropKnives: (
     bindKey: string,
     selected: number[]
@@ -174,11 +181,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ModeInfo | null>(null);
   const [botItems, setBotItems] = useState<BotItemsState | null>(null);
   const [presets, setPresets] = useState<PresetsState | null>(null);
+  const [teamLineup, setTeamLineup] = useState<TeamLineupState | null>(null);
+  const [timescaleToggleEnabled, setTimescaleToggleEnabled] = useState(false);
   // Per-section "changed while CS2 running, pending restart" flags. Persisted in
   // localStorage so each light survives a full close/reopen of the panel while
   // CS2 keeps running (the boot refreshAll clears them once CS2 is not running).
   const [aimPending, setAimPending] = usePersistedFlag("cs2bi.aimPending");
   const [nadesPending, setNadesPending] = usePersistedFlag("cs2bi.nadesPending");
+  const [teamLineupPending, setTeamLineupPending] = usePersistedFlag("cs2bi.teamLineupPending");
   const [modePending, setModePending] = usePersistedFlag("cs2bi.modePending");
   const [difficultyPending, setDifficultyPending] = usePersistedFlag("cs2bi.difficultyPending");
   const [dropKnivesPending, setDropKnivesPending] =
@@ -295,6 +305,45 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [directory, reportError]
   );
 
+  const applyTeamLineup = useCallback(
+    async (input: TeamLineupInput) => {
+      const csgo = directory?.valid ? directory.selected : null;
+      if (!csgo) return null;
+      try {
+        const info = await api.setTeamLineup(csgo, input);
+        setTeamLineup(info);
+        setTeamLineupPending(
+          info.enabled !== input.enabled
+          || info.friendly_team_index !== input.friendly_team_index
+          || info.enemy_team_index !== input.enemy_team_index
+          || info.excluded_player !== input.excluded_player
+          ? false : false
+        );
+        return info;
+      } catch (e) {
+        reportError(e);
+        return null;
+      }
+    },
+    [directory, reportError]
+  );
+
+  const applyTimescaleToggle = useCallback(
+    async (enabled: boolean) => {
+      setTimescaleToggleEnabled(enabled);
+      const csgo = directory?.valid ? directory.selected : null;
+      if (!csgo) return false;
+      try {
+        const result = await api.setTimescaleToggle(csgo, enabled);
+        return result;
+      } catch (e) {
+        reportError(e);
+        return false;
+      }
+    },
+    [directory, reportError]
+  );
+
   const applyBotItem = useCallback(
     async (item: BotItemKey, on: boolean) => {
       const csgo = directory?.valid ? directory.selected : null;
@@ -368,12 +417,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
       if (!snapshot.process.running) {
         setAimPending(false);
-        setNadesPending(false);
+setNadesPending(false);
+      setTeamLineupPending(false);
+        setTeamLineupPending(false);
         setModePending(false);
         setDifficultyPending(false);
         clearBotItemsPending();
         setDropKnivesPending(false);
       }
+
+      const csgo = snapshot.directory?.valid ? snapshot.directory.selected : null;
+      if (csgo) {
+        api.getTeamLineup(csgo).then(setTeamLineup).catch(() => {});
+      }
+      api.getTimescaleToggle().then(setTimescaleToggleEnabled).catch(() => {});
     } catch (e) {
       // Keep the complete last-good snapshot, but refresh the process lock
       // independently so a transient disk scan cannot leave install disabled.
@@ -396,8 +453,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setPresets(null);
       setDropKnives(null);
       setAimPending(false);
-      setNadesPending(false);
-      setModePending(false);
+setNadesPending(false);
+        setTeamLineupPending(false);
+        setModePending(false);
       setDifficultyPending(false);
       clearBotItemsPending();
       setDropKnivesPending(false);
@@ -618,9 +676,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     difficulty,
     mode,
     botItems,
-    presets,
+presets,
+teamLineup,
+    timescaleToggleEnabled,
     aimPending,
-    nadesPending,
+nadesPending,
+    teamLineupPending,
     modePending,
     difficultyPending,
     dropKnivesPending,
@@ -649,6 +710,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     applyBotItem,
     applyAim,
     applyNades,
+    applyTeamLineup,
+    applyTimescaleToggle,
     applyDropKnives,
   };
 

@@ -4,15 +4,111 @@
   gap: 12px;
 }
 
-.presets__controls > :last-child {
+.presets__controls > :last-child,
+.presets__controls .teamlineup-section {
   grid-column: 1 / -1;
+}
+
+.teamlineup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.teamlineup__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teamlineup__label {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.teamlineup__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: rgba(120, 120, 128, 0.06);
+}
+
+.teamlineup__hint {
+  color: var(--c-orange);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.teamlineup__select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.teamlineup__select-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.teamlineup__exclusions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.teamlineup__sublabel {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.teamlineup__players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.teamlineup__player {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  box-shadow: var(--sh-card);
+}
+.teamlineup__player:hover {
+  box-shadow: var(--sh-pop);
+}
+.teamlineup__player.is-excluded {
+  background: rgba(255, 69, 58, 0.15);
+  color: var(--c-red);
+  box-shadow: none;
+}
+.teamlineup__player.is-excluded:hover {
+  background: rgba(48, 209, 88, 0.12);
+  color: var(--c-green);
+}
+.teamlineup__player:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 880px) {
   .presets__controls {
     grid-template-columns: 1fr;
   }
-  .presets__controls > :last-child {
+  .presets__controls > :last-child,
+  .presets__controls .teamlineup-section {
     grid-column: auto;
   }
 }

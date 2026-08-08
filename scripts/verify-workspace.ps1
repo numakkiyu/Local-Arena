@@ -238,7 +238,11 @@ $requiredSources = @(
     "addons/counterstrikesharp/plugins/PlayerKnifeCustomizer/PlayerKnifeCustomizer.cs",
     "addons/counterstrikesharp/plugins/PlayerKnifeCustomizer/sticker_weapon_ids.json",
     "addons/counterstrikesharp/plugins/PlayerKnifeCustomizer/player_cosmetic_catalog.json",
-    "addons/counterstrikesharp/plugins/BotHiderImpl/BotHiderImplPlugin.cs"
+    "addons/counterstrikesharp/plugins/BotHiderImpl/BotHiderImplPlugin.cs",
+    "addons/counterstrikesharp/plugins/TeamLineupInjector/TeamLineupInjector.cs",
+    "addons/counterstrikesharp/plugins/TeamLineupInjector/TeamLineupInjector.csproj",
+    "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/OfflineMatchTelemetry.cs",
+    "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/OfflineMatchTelemetry.csproj"
 )
 foreach ($relative in $requiredSources) {
     Assert-File (Join-Path $repo $relative) $relative
@@ -406,6 +410,14 @@ catch {
     Add-Failure "Player cosmetic placement metadata is invalid: $($_.Exception.Message)"
 }
 
+$teamLineupInjector = Get-Content -LiteralPath (Join-Path $repo "addons/counterstrikesharp/plugins/TeamLineupInjector/TeamLineupInjector.cs") -Raw
+if ($teamLineupInjector -notmatch 'MatchSessionActive\(\)' -or
+    $teamLineupInjector -notmatch 'config is not \{ Enabled: true \}' -or
+    $teamLineupInjector -notmatch '"bot_kick"' -or
+    $teamLineupInjector -notmatch 'RestoreBotQuota\(\)') {
+    Add-Failure "TeamLineupInjector must check Enabled and MatchSessionActive before bot_kick."
+}
+
 $matchCatalog = Get-Content -LiteralPath (Join-Path $repo "addons/counterstrikesharp/plugins/PlusMatchCoordinator/match_catalog.json") -Raw | ConvertFrom-Json
 $featuredPlayers = @($matchCatalog.teams | ForEach-Object { $_.players } | Sort-Object -Unique)
 
@@ -487,6 +499,7 @@ if ($PackageRoot) {
         "addons/counterstrikesharp/plugins/PlusMatchCoordinator/profiles/Low/botprofile.db",
         "addons/counterstrikesharp/plugins/PlusMatchCoordinator/profiles/Medium/botprofile.db",
         "addons/counterstrikesharp/plugins/PlusMatchCoordinator/profiles/High/botprofile.db",
+        "addons/counterstrikesharp/plugins/TeamLineupInjector/TeamLineupInjector.dll",
         "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/OfflineMatchTelemetry.dll",
         "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/OfflineMatchTelemetry.deps.json",
         "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/OfflineMatchTelemetry.pdb",
@@ -638,6 +651,20 @@ if ($PackageRoot) {
             }) {
                 if ($manifestOwnership[$relative] -ne "plus") {
                     Add-Failure "PlusMatchCoordinator payload is not Plus-owned: $relative"
+                }
+            }
+            foreach ($relative in $manifestPaths.Keys | Where-Object {
+                $_ -like "addons/counterstrikesharp/plugins/TeamLineupInjector/*"
+            }) {
+                if ($manifestOwnership[$relative] -ne "plus") {
+                    Add-Failure "TeamLineupInjector payload is not Plus-owned: $relative"
+                }
+            }
+            foreach ($relative in $manifestPaths.Keys | Where-Object {
+                $_ -like "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/*"
+            }) {
+                if ($manifestOwnership[$relative] -ne "plus") {
+                    Add-Failure "OfflineMatchTelemetry payload is not Plus-owned: $relative"
                 }
             }
         }

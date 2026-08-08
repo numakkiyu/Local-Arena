@@ -839,3 +839,9 @@
 .stats-config__actions button { min-width: 84px; height: 38px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text-primary); cursor: pointer; }
 .stats-config__actions button.primary { border-color: var(--c-accent); background: var(--c-accent); color: #fff; }
 .stats-config__actions button:disabled { cursor: not-allowed; opacity: .55; }
+
+.stats-delete__enter { min-width: 80px; height: 32px; border: 1px solid var(--c-red); border-radius: var(--r-sm); background: transparent; color: var(--c-red); font-size: 12px; font-weight: 650; cursor: pointer; transition: background var(--dur) var(--ease); }
+.stats-delete__enter:hover { background: rgba(224, 93, 117, 0.1); }
+.stats-delete__confirm { min-width: 80px; height: 32px; border: 0; border-radius: var(--r-sm); background: var(--c-red); color: #fff; font-size: 12px; font-weight: 650; cursor: pointer; }
+.stats-delete__confirm:disabled { opacity: 0.45; cursor: not-allowed; }
+.stats-delete__cancel { min-width: 60px; height: 32px; border: 1px solid var(--line); border-radius: var(--r-sm); background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; }

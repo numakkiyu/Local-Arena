@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../lib/api";
 import type { Cs2ssMatchDetailResponse, Cs2ssRoundPlayer } from "../data/cs2ssTypes";
-import { cs2ssCalcRating, cs2ssCalcAdr, cs2ssCalcKast } from "../data/cs2ssRating";
+import { cs2ssCalcRating, cs2ssCalcAdr, cs2ssCalcKast, cs2ssCalcHsPct } from "../data/cs2ssRating";
 import { cs2ssMapLabel } from "../data/cs2ssMaps";
 import { cs2ssRoundEndReasonLabel } from "../data/cs2ssReasons";
 import { useStore } from "../state/store";
@@ -117,11 +117,12 @@ export default function StatsMatchDetail({ csgo, matchId, onBack }: Props) {
     <div style={{ marginBottom: 24 }}>
       <div className="stats-team-block__head">{label} <span>{score}</span></div>
       <div style={{ border: "1px solid var(--line)", borderRadius: 11, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1.5fr) repeat(7, 1fr)", alignItems: "center", borderBottom: "1px solid var(--line)", cursor: "default", background: "rgba(0,0,0,0.02)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1.5fr) repeat(8, 1fr)", alignItems: "center", borderBottom: "1px solid var(--line)", cursor: "default", background: "rgba(0,0,0,0.02)" }}>
           <div style={{ fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 10px" }}>{t("stats.player")}</div>
           <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>K-D</div>
           <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>ADR</div>
           <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>KAST</div>
+          <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>{t("stats.hsPct")}</div>
           <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>{t("stats.tradeKills")}</div>
           <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>{t("stats.multikills")}</div>
           <div style={{ textAlign: "center", fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".05em", padding: "6px 4px" }}>{t("stats.clutches")}</div>
@@ -130,14 +131,16 @@ export default function StatsMatchDetail({ csgo, matchId, onBack }: Props) {
         {players.map(({ mp, r, adr, kast }) => {
           const iss = mp.steamId === s.steamId;
           const dots = mp.multikill2 + mp.multikill3 + mp.multikill4 + mp.multikill5;
+          const hsPct = cs2ssCalcHsPct(mp.totalHeadshotKills, mp.totalKills);
           return (
-            <div key={mp.steamId} style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1.5fr) repeat(7, 1fr)", alignItems: "center", borderBottom: "1px solid var(--line)", cursor: "pointer", background: iss ? "rgba(124,92,255,.055)" : undefined, fontSize: 13 }} onClick={() => toggle(mp.steamId)}>
+            <div key={mp.steamId} style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1.5fr) repeat(8, 1fr)", alignItems: "center", borderBottom: "1px solid var(--line)", cursor: "pointer", background: iss ? "rgba(124,92,255,.055)" : undefined, fontSize: 13 }} onClick={() => toggle(mp.steamId)}>
               <div style={{ padding: "7px 10px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 <span className={`stats-team-row__dot${sel.has(mp.steamId) ? " sel" : ""}`} style={{ marginRight: 6 }} />{mp.name}
               </div>
               <div style={{ textAlign: "center", fontWeight: 700, padding: "7px 4px" }}>{mp.totalKills}<span style={{ color: "var(--text-secondary)", fontWeight: 400 }}>/{mp.totalDeaths}</span></div>
               <div style={{ textAlign: "center", padding: "7px 4px", color: "var(--text-secondary)" }}>{adr.toFixed(0)}</div>
               <div style={{ textAlign: "center", padding: "7px 4px", color: kast >= 75 ? "#20b486" : "var(--text-secondary)" }}>{kast.toFixed(0)}%</div>
+              <div style={{ textAlign: "center", padding: "7px 4px", color: hsPct >= 40 ? "#20b486" : "var(--text-secondary)" }}>{hsPct}%</div>
               <div style={{ textAlign: "center", padding: "7px 4px", color: "var(--text-secondary)" }}>{mp.tradeKills || "—"}</div>
               <div style={{ textAlign: "center", padding: "7px 4px", color: "var(--text-secondary)" }}>{dots || "—"}</div>
               <div style={{ textAlign: "center", padding: "7px 4px", color: "var(--text-secondary)" }}>{mp.clutchesWon}/{mp.clutchAttempts}</div>

@@ -233,6 +233,7 @@ pub fn run(payload_root: &Path, state_root: &Path, target: &Path, cs2_running: b
         ("MATCH_COORDINATOR_MANAGED", "PlusMatchCoordinator", "addons/counterstrikesharp/plugins/PlusMatchCoordinator/PlusMatchCoordinator.dll"),
         ("MATCH_CORE_MANAGED", "MatchCore", "addons/counterstrikesharp/plugins/PlusMatchCoordinator/MatchCore.dll"),
         ("BOTHIDER_API_MANAGED", "BotHider API", "addons/counterstrikesharp/shared/BotHiderApi/BotHiderApi.dll"),
+        ("TEAM_LINEUP_MANAGED", "TeamLineupInjector", "addons/counterstrikesharp/plugins/TeamLineupInjector/TeamLineupInjector.dll"),
     ] {
         checks.push(managed_component_check(
             &format!("TARGET_{code}"),

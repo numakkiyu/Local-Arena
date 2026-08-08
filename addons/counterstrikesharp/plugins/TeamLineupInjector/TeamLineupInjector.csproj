@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>TeamLineupInjector</AssemblyName>
+    <RootNamespace>TeamLineupInjector</RootNamespace>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.367">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <ProjectReference Include="..\..\shared\BotHiderApi\BotHiderApi.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NuGet.config" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="StageForGameDeploy" AfterTargets="Publish">
+    <ItemGroup>
+      <StageFiles Include="$(PublishDir)**/*" />
+    </ItemGroup>
+    <MakeDir Directories="$(ProjectDir)stage\game\csgo\addons\counterstrikesharp\plugins\TeamLineupInjector" />
+    <Copy SourceFiles="@(StageFiles)" DestinationFolder="$(ProjectDir)stage\game\csgo\addons\counterstrikesharp\plugins\TeamLineupInjector" />
+  </Target>
+</Project>

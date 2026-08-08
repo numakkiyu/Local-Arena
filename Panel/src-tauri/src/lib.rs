@@ -124,6 +124,16 @@ struct AppConfig {
     experimental_features_enabled: bool,
     #[serde(default)]
     experimental_stickers_enabled: bool,
+    #[serde(default)]
+    team_lineup_enabled: bool,
+    #[serde(default)]
+    team_lineup_friendly: Option<String>,
+    #[serde(default)]
+    team_lineup_enemy: Option<String>,
+    #[serde(default)]
+    team_lineup_excluded: Option<String>,
+    #[serde(default)]
+    timescale_toggle_enabled: bool,
 }
 
 impl Default for AppConfig {
@@ -146,6 +156,11 @@ impl Default for AppConfig {
             cosmetics_enabled_before_preview: None,
             experimental_features_enabled: false,
             experimental_stickers_enabled: false,
+            team_lineup_enabled: false,
+            team_lineup_friendly: None,
+            team_lineup_enemy: None,
+            team_lineup_excluded: None,
+            timescale_toggle_enabled: false,
         }
     }
 }
@@ -235,6 +250,21 @@ struct AimRuntimeStatus {
     active: bool,
     override_count: u64,
     error_count: u64,
+}
+#[derive(Serialize)]
+struct TeamLineupState {
+    enabled: bool,
+    friendly_team_index: Option<String>,
+    enemy_team_index: Option<String>,
+    excluded_player: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct TeamLineupInput {
+    enabled: bool,
+    friendly_team_index: Option<String>,
+    enemy_team_index: Option<String>,
+    excluded_player: Option<String>,
 }
 #[derive(Serialize)]
 struct DropKnivesState {
@@ -1797,6 +1827,159 @@ fn set_nades(app: AppHandle, csgo: String, value: String) -> Result<PresetsState
     config.nades = Some(value);
     write_config(&app, &config)?;
     get_presets(app, csgo)
+}
+
+fn team_lineup_meta(index: &str) -> Option<(&'static str, &'static str, &'static [&'static str])> {
+    match index {
+        "1" => Some(("vita", "Team Vitality", &["apEX", "ZywOo", "ropz", "mezii", "flameZ"])),
+        "2" => Some(("furi", "FURIA Esports", &["yuurih", "FalleN", "KSCERATO", "YEKINDAR", "molodoy"])),
+        "3" => Some(("fal", "Falcons", &["NiKo", "TeSeS", "m0NESY", "karrigan", "kyousuke"])),
+        "4" => Some(("mouz", "MOUZ", &["jL", "torzsi", "Spinx", "xelex", "xertioN"])),
+        "5" => Some(("faze", "FaZe Clan", &["enkay J", "frozen", "Twistzz", "broky", "jcobbb"])),
+        "6" => Some(("mngz", "The MongolZ", &["bLitz", "Techno4K", "mzinho", "910", "cobrazera"])),
+        "7" => Some(("navi", "Natus Vincere", &["Aleksib", "iM", "b1t", "w0nderful", "makazze"])),
+        "8" => Some(("spir", "Spirit", &["sh1ro", "magixx", "tN1R", "zont1x", "donk"])),
+        "9" => Some(("g2", "G2 Esports", &["huNter-", "NertZ", "SunPayus", "HeavyGod", "MATYS"])),
+        "10" => Some(("aura", "Aurora", &["MAJ3R", "XANTARES", "woxic", "soulfly", "Wicadia"])),
+        "11" => Some(("b8", "B8", &["s1zzi", "alex666", "npl", "kensizor", "esenthial"])),
+        "12" => Some(("3dm", "3DMAX", &["misutaaa", "Maka", "Lucky", "Ex3rcice", "Graviti"])),
+        "13" => Some(("pain", "paiN Gaming", &["vsm", "biguzera", "piriajr", "saffee", "snow"])),
+        "14" => Some(("astr", "Astralis", &["HooXi", "phzy", "jabbi", "Staehr", "ryu"])),
+        "15" => Some(("liq", "Team Liquid", &["NAF", "EliGE", "malbsMd", "siuhy", "ultimate"])),
+        "16" => Some(("psnu", "Passion UA", &["JT", "try", "sdy", "Kvem", "nicx"])),
+        "17" => Some(("lgcy", "Legacy", &["dumau", "latto", "n1ssim", "arT", "saadzin"])),
+        "18" => Some(("imp", "Imperial", &["chelo", "VINI", "decenty", "levi", "noway"])),
+        "19" => Some(("pari", "PARIVISION", &["Jame", "BELCHONOKK", "xiELO", "nota", "zweih"])),
+        "20" => Some(("m80", "M80", &["slaxz-", "Swisher", "s1n", "JBa", "Lake"])),
+        "21" => Some(("gl", "GamerLegion", &["Snax", "REZ", "Tauson", "PR", "hypex"])),
+        "22" => Some(("vp", "Virtus.pro", &["FL1T", "Perfecto", "fame", "b1st", "tO0RO"])),
+        "23" => Some(("nip", "Ninjas in Pyjamas", &["Snappi", "sjuush", "stavn", "xKacpersky", "cairne"])),
+        "24" => Some(("hero", "HEROIC", &["xfl0ud", "nilo", "susp", "Chr1zN", "yxngstxr"])),
+        "25" => Some(("lynn", "Lynn Vision", &["Westmelon", "z4KR", "Starry", "EmiliaQAQ", "C4LLM3SU3"])),
+        "26" => Some(("nrg", "NRG", &["nitr0", "Sonic", "oSee", "br0", "Grim"])),
+        "27" => Some(("bb", "BetBoom", &["Boombl4", "S1ren", "d1Ledez", "zorte", "Magnojez"])),
+        "28" => Some(("fq", "FlyQuest", &["jks", "INS", "Vexite", "nettik", "story"])),
+        "29" => Some(("fntc", "fnatic", &["KRIMZ", "Br4tkO", "fEAR", "jambo", "jackasmo"])),
+        "30" => Some(("tyl", "TYLOO", &["JamYoung", "Jee", "Mercury", "Moseyuh", "Zero"])),
+        "31" => Some(("flux", "Fluxo", &["Lucaozy", "zevy", "decenty", "kye", "exit"])),
+        "32" => Some(("nein", "9INE", &["raalz", "kraghen", "bnox", "cej0t", "flayy"])),
+        "33" => Some(("mont", "Monte", &["Bymas", "afro", "Gizmy", "AZUWU", "Rainwaker"])),
+        "34" => Some(("bes", "BESTIA", &["nacho", "cass1n", "buda", "tomaszin", "timo"])),
+        "35" => Some(("ence", "ENCE", &["HENU", "millert", "teme", "Cliqq", "Schwarz"])),
+        "36" => Some(("ecst", "ECSTATIC", &["TMB", "nicoodoz", "Anelele", "Buzz", "nut nut"])),
+        "37" => Some(("ratm", "Rare Atom", &["Summer", "3gl", "Trash", "L1haNg", "chengking"])),
+        "38" => Some(("og", "OG", &["cadiaN", "spooke", "arrozdoce", "adamb", "bodyy"])),
+        "39" => Some(("thv", "100 Thieves", &["Ag1l", "device", "poiii", "sirah", "rain"])),
+        "40" => Some(("big", "BIG", &["tabseN", "JDC", "faveN", "blameF", "gr1ks"])),
+        _ => None,
+    }
+}
+
+
+#[derive(Serialize)]
+struct LineupJsonTeam {
+    logo: String,
+    name: String,
+    players: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct LineupJsonConfig {
+    enabled: bool,
+    friendly_team: Option<LineupJsonTeam>,
+    enemy_team: Option<LineupJsonTeam>,
+    excluded_player: Option<String>,
+}
+
+#[tauri::command]
+fn set_team_lineup(app: AppHandle, csgo: String, input: TeamLineupInput) -> Result<TeamLineupState> {
+    let root = csgo_path(&csgo)?;
+    let mut config = read_config(&app)?;
+
+    config.team_lineup_enabled = input.enabled;
+    config.team_lineup_friendly = input.friendly_team_index.clone();
+    config.team_lineup_enemy = input.enemy_team_index.clone();
+    config.team_lineup_excluded = input.excluded_player.clone();
+
+    let json_config = if input.enabled && (input.friendly_team_index.is_some() || input.enemy_team_index.is_some()) {
+        let friendly = input.friendly_team_index.as_deref()
+            .and_then(team_lineup_meta)
+            .map(|(logo, name, players)| LineupJsonTeam {
+                logo: logo.to_string(),
+                name: name.to_string(),
+                players: players.iter().map(|s| s.to_string()).collect(),
+            });
+        let enemy = input.enemy_team_index.as_deref()
+            .and_then(team_lineup_meta)
+            .map(|(logo, name, players)| LineupJsonTeam {
+                logo: logo.to_string(),
+                name: name.to_string(),
+                players: players.iter().map(|s| s.to_string()).collect(),
+            });
+        LineupJsonConfig {
+            enabled: true,
+            friendly_team: friendly,
+            enemy_team: enemy,
+            excluded_player: input.excluded_player.clone(),
+        }
+    } else {
+        LineupJsonConfig {
+            enabled: false,
+            friendly_team: None,
+            enemy_team: None,
+            excluded_player: None,
+        }
+    };
+
+    let csbip = root.join(".csbip");
+    fs::create_dir_all(&csbip).ok();
+    let lineup_path = csbip.join("team-lineup.json");
+    let json = serde_json::to_string_pretty(&json_config)
+        .map_err(|e| AppError::io(format!("Failed to serialize lineup config: {e}")))?;
+    fs::write(&lineup_path, json)
+        .map_err(|e| AppError::io(format!("Failed to write team-lineup.json: {e}")))?;
+
+    write_config(&app, &config)?;
+
+    Ok(TeamLineupState {
+        enabled: config.team_lineup_enabled,
+        friendly_team_index: config.team_lineup_friendly.clone(),
+        enemy_team_index: config.team_lineup_enemy.clone(),
+        excluded_player: config.team_lineup_excluded.clone(),
+    })
+}
+
+#[tauri::command]
+fn get_team_lineup(app: AppHandle, csgo: String) -> Result<TeamLineupState> {
+    let root = csgo_path(&csgo)?;
+    let config = read_config(&app)?;
+    let _ = root;
+    Ok(TeamLineupState {
+        enabled: config.team_lineup_enabled,
+        friendly_team_index: config.team_lineup_friendly.clone(),
+        enemy_team_index: config.team_lineup_enemy.clone(),
+        excluded_player: config.team_lineup_excluded.clone(),
+    })
+}
+
+#[tauri::command]
+fn set_timescale_toggle(app: AppHandle, csgo: String, enabled: bool) -> Result<bool> {
+    let root = csgo_path(&csgo)?;
+    if enabled {
+        replace_managed_cfg_command(&root, "bind CAPSLOCK", "bind CAPSLOCK \"toggle host_timescale 0.4 1.0\"")?;
+    } else {
+        replace_managed_cfg_command(&root, "bind CAPSLOCK", "unbind CAPSLOCK")?;
+    }
+    let mut config = read_config(&app)?;
+    config.timescale_toggle_enabled = enabled;
+    write_config(&app, &config)?;
+    Ok(enabled)
+}
+
+#[tauri::command]
+fn get_timescale_toggle(app: AppHandle) -> Result<bool> {
+    let config = read_config(&app)?;
+    Ok(config.timescale_toggle_enabled)
 }
 
 #[tauri::command]
@@ -3941,7 +4124,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![get_config, save_config, should_present_welcome_story, detect_directories, select_directory,
             cleanup_backups, validate_files, get_difficulty, set_difficulty, get_mode, set_mode,
             reconcile_launch_options, launch_cs2, reconcile_core_json, get_bot_items, set_bot_item,
-            get_presets, set_aim, set_nades, get_drop_knives, set_drop_knives,
+            get_presets, set_aim, set_nades, set_team_lineup, get_team_lineup, set_timescale_toggle, get_timescale_toggle, get_drop_knives, set_drop_knives,
             get_knife_customizer, save_knife_customizer, export_cosmetics_preset,
             import_cosmetics_preset, get_runtime_snapshot, get_cs2_process,
             inspect_installation, get_install_plan, install_payload, repair_payload,
@@ -3956,7 +4139,7 @@ pub fn run() {
             cs2ss_bridge::get_cs2ss_match_detail, cs2ss_bridge::get_cs2ss_player_detail,
             cs2ss_bridge::list_cs2ss_matches_with_stats,
             cs2ss_bridge::get_cs2ss_config, cs2ss_bridge::save_cs2ss_config,
-            cs2ss_bridge::get_cs2ss_dm_overview])
+            cs2ss_bridge::get_cs2ss_dm_overview, cs2ss_bridge::delete_cs2ss_matches])
         .run(tauri::generate_context!())
         .expect("error while running CS2BotImproverPlus");
 }

@@ -207,7 +207,8 @@ $upstreamPluginBuilds = @(
     @{ Name = "BotRandomizer"; Framework = "net10.0" },
     @{ Name = "NadeSystem"; Framework = "net10.0" },
     @{ Name = "RoundDamageRecap"; Framework = "net10.0" },
-    @{ Name = "PlusMatchCoordinator"; Framework = "net8.0" }
+    @{ Name = "PlusMatchCoordinator"; Framework = "net8.0" },
+    @{ Name = "TeamLineupInjector"; Framework = "net8.0" }
 )
 foreach ($plugin in $upstreamPluginBuilds) {
     $build = Join-Path $repo "addons\counterstrikesharp\plugins\$($plugin.Name)\bin\Release\$($plugin.Framework)"
@@ -344,6 +345,7 @@ $manifestEntries = foreach ($topLevel in @("addons", "cfg", "overrides")) {
         $plusOwned = $relative -like "addons/counterstrikesharp/plugins/PlayerKnifeCustomizer/*" -or
             $relative -like "addons/counterstrikesharp/plugins/BotHiderImpl/*" -or
             $relative -like "addons/counterstrikesharp/plugins/PlusMatchCoordinator/*" -or
+            $relative -like "addons/counterstrikesharp/plugins/TeamLineupInjector/*" -or
             $relative -like "addons/counterstrikesharp/plugins/OfflineMatchTelemetry/*" -or
             $relative -like "addons/counterstrikesharp/shared/BotHiderApi/*" -or
             $relative -in @("cfg/my_bot_ffa_config.cfg", "cfg/my_bot_normal_config.cfg")

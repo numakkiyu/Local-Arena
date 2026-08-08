@@ -1447,3 +1447,52 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 }
+
+#[tauri::command]
+pub fn delete_cs2ss_matches(csgo: String, match_ids: Vec<i64>) -> Result<usize> {
+    if match_ids.is_empty() {
+        return Err(AppError::invalid("No match IDs provided for deletion"));
+    }
+    let conn = open_db(&csgo)?;
+
+    let placeholders: Vec<String> = match_ids.iter().enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let in_clause = placeholders.join(",");
+
+    let tx = conn.unchecked_transaction()
+        .map_err(|e| AppError::invalid(format!("Cannot begin transaction: {e}")))?;
+
+    tx.execute_batch("PRAGMA foreign_keys = ON")
+        .map_err(|e| AppError::invalid(format!("Cannot enable foreign keys: {e}")))?;
+
+    tx.execute(
+        &format!("DELETE FROM deathmatch_lives WHERE match_id IN ({in_clause})"),
+        rusqlite::params_from_iter(match_ids.iter()),
+    ).map_err(|e| AppError::invalid(format!("Delete deathmatch_lives failed: {e}")))?;
+
+    tx.execute(
+        &format!("DELETE FROM round_players WHERE match_id IN ({in_clause})"),
+        rusqlite::params_from_iter(match_ids.iter()),
+    ).map_err(|e| AppError::invalid(format!("Delete round_players failed: {e}")))?;
+
+    tx.execute(
+        &format!("DELETE FROM rounds WHERE match_id IN ({in_clause})"),
+        rusqlite::params_from_iter(match_ids.iter()),
+    ).map_err(|e| AppError::invalid(format!("Delete rounds failed: {e}")))?;
+
+    tx.execute(
+        &format!("DELETE FROM match_players WHERE match_id IN ({in_clause})"),
+        rusqlite::params_from_iter(match_ids.iter()),
+    ).map_err(|e| AppError::invalid(format!("Delete match_players failed: {e}")))?;
+
+    let deleted = tx.execute(
+        &format!("DELETE FROM matches WHERE match_id IN ({in_clause})"),
+        rusqlite::params_from_iter(match_ids.iter()),
+    ).map_err(|e| AppError::invalid(format!("Delete matches failed: {e}")))?;
+
+    tx.commit()
+        .map_err(|e| AppError::invalid(format!("Commit transaction failed: {e}")))?;
+
+    Ok(deleted)
+}

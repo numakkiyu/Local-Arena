@@ -12,11 +12,11 @@ import { MAP_IMAGES, MAP_LABELS } from "../data/maps";
 import { teamLogoPath } from "../data/matchVisuals";
 import "./MatchPanel.css";
 
-type Props = { onOpenInstallation?: () => void; onOpenHistory?: () => void };
+type Props = { onOpenInstallation?: () => void; onOpenHistory?: () => void; onOpenLineup?: () => void };
 
-export default function MatchPanel({ onOpenInstallation, onOpenHistory }: Props) {
+export default function MatchPanel({ onOpenInstallation, onOpenHistory, onOpenLineup }: Props) {
   const t = useT();
-  const { directory, process, reportError } = useStore();
+  const { directory, process, reportError, teamLineup } = useStore();
   const csgo = directory?.valid ? directory.selected : null;
   const [catalog, setCatalog] = useState<MatchCatalog | null>(null);
   const [result, setResult] = useState<MatchResult | null>(null);
@@ -55,7 +55,8 @@ export default function MatchPanel({ onOpenInstallation, onOpenHistory }: Props)
   }, [csgo]);
 
   const selectedTeam = useMemo(() => catalog?.teams.find((team) => team.id === teamId) ?? null, [catalog, teamId]);
-  const disabledReason = !csgo ? t("match.reasonDirectory") : process?.running ? t("match.reasonRunning") : !catalog ? t("match.reasonCatalog") : opponentKind === "featured_team" && !teamId ? t("match.reasonTeam") : null;
+  const lineupEnabled = teamLineup?.enabled === true;
+  const disabledReason = !csgo ? t("match.reasonDirectory") : lineupEnabled ? t("match.reasonLineup") : process?.running ? t("match.reasonRunning") : !catalog ? t("match.reasonCatalog") : opponentKind === "featured_team" && !teamId ? t("match.reasonTeam") : null;
 
   const teamOptions = useMemo(() => (catalog?.teams ?? []).map((team) => ({
     value: team.id,
@@ -255,6 +256,7 @@ export default function MatchPanel({ onOpenInstallation, onOpenHistory }: Props)
               <AlertTriangle size={15} />
               <span>{disabledReason}</span>
               {!csgo && onOpenInstallation && <button onClick={onOpenInstallation}>{t("match.openInstallation")}</button>}
+              {lineupEnabled && onOpenLineup && <button onClick={onOpenLineup}>{t("match.openLineup")}</button>}
             </div>
           )}
           <button className="match-start" disabled={!!disabledReason || busy} onClick={startMatch}>

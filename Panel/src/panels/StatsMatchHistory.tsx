@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "../lib/api";
 import type { Cs2ssMatchWithStats } from "../data/cs2ssTypes";
 import { cs2ssCalcRating, cs2ssCalcAdr } from "../data/cs2ssRating";
@@ -22,10 +22,15 @@ export default function StatsMatchHistory({ csgo, onOpenMatch, onBack }: Props) 
   const [modeF, setModeF] = useState("all");
   const [dateF, setDateF] = useState("");
   const [dateT, setDateT] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     api.listCs2ssMatchesWithStats(csgo).then(ms => { setMatches(ms ?? []); setLoading(false); }).catch(e => { setErr(String(e)); setLoading(false); reportError(e); });
   }, [csgo, reportError]);
+
+  useEffect(() => { load(); }, [load]);
 
   const maps = useMemo(() => [...new Set(matches.map(m => m.map))].sort(), [matches]);
   const filtered = useMemo(() => {
@@ -37,6 +42,35 @@ export default function StatsMatchHistory({ csgo, onOpenMatch, onBack }: Props) 
     return r;
   }, [matches, mapF, modeF, dateF, dateT]);
 
+  const toggleSelect = (id: number) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map(m => m.matchId)));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    try {
+      await api.deleteCs2ssMatches(csgo, ids);
+      setSelected(new Set());
+      setDeleting(false);
+      load();
+    } catch (e) {
+      reportError(e);
+    }
+  };
+
   if (loading) return <div className="stats-panel"><div className="stats-panel__loading">{t("stats.loading")}</div></div>;
   if (err) return <div className="stats-panel"><div className="stats-panel__error">{err}</div></div>;
 
@@ -45,6 +79,16 @@ export default function StatsMatchHistory({ csgo, onOpenMatch, onBack }: Props) 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
         {onBack && <button className="stats-back" onClick={onBack}>← {t("stats.back")}</button>}
         <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>{t("stats.matchesShown", { shown: filtered.length, total: matches.length })}</span>
+        <div style={{ flex: 1 }} />
+        {deleting ? (
+          <>
+            <span style={{ fontSize: 12, color: "var(--c-red)", fontWeight: 600 }}>{t("stats.selected", { n: selected.size })}</span>
+            <button className="stats-delete__confirm" onClick={handleDelete} disabled={selected.size === 0}>{t("stats.confirmDelete")}</button>
+            <button className="stats-delete__cancel" onClick={() => { setDeleting(false); setSelected(new Set()); }}>{t("stats.cancel")}</button>
+          </>
+        ) : (
+          <button className="stats-delete__enter" onClick={() => setDeleting(true)}>{t("stats.deleteMatches")}</button>
+        )}
       </div>
 
       <div className="stats-filters">
@@ -57,14 +101,16 @@ export default function StatsMatchHistory({ csgo, onOpenMatch, onBack }: Props) 
 
       <div className="stats-panel-block" style={{ padding: 0 }}>
         <table className="stats-table">
-          <thead><tr><th>{t("stats.map")}</th><th>{t("stats.date")}</th><th>{t("stats.score")}</th><th>{t("stats.rounds")}</th><th style={{ textAlign: "right" }}>K/D/A</th><th style={{ textAlign: "right" }}>ADR</th><th style={{ textAlign: "right" }}>{t("stats.rating")}</th></tr></thead>
+          <thead><tr>
+            {deleting && <th style={{ width: 40 }}><input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} /></th>}
+            <th>{t("stats.map")}</th><th>{t("stats.date")}</th><th>{t("stats.score")}</th><th>{t("stats.rounds")}</th><th style={{ textAlign: "right" }}>K/D/A</th><th style={{ textAlign: "right" }}>ADR</th><th style={{ textAlign: "right" }}>{t("stats.rating")}</th>
+          </tr></thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>{t("stats.noFilteredMatches")}</td></tr>
+              <tr><td colSpan={deleting ? 8 : 7} style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>{t("stats.noFilteredMatches")}</td></tr>
             ) : filtered.map(m => {
               const dm = m.modeFamily === "deathmatch";
 
-              // Competitive stats
               const rating = !dm && m.roundsPlayed > 0
                 ? cs2ssCalcRating(m.playerKills, m.playerDeaths, m.playerAssists, m.playerDamage, m.playerHeadshots, m.roundsPlayed, {
                     kastRounds: m.playerKastRounds, tradeKills: m.playerTradeKills,
@@ -74,13 +120,13 @@ export default function StatsMatchHistory({ csgo, onOpenMatch, onBack }: Props) 
                 : 0;
               const adr = !dm ? cs2ssCalcAdr(m.playerDamage, m.roundsPlayed) : 0;
 
-              // DM stats
               const durMin = Math.max(1, m.durationSeconds / 60);
               const dpm = dm ? Math.round(m.playerDamage / durMin) : 0;
               const kpm = dm ? Math.round(m.playerKills / durMin * 100) / 100 : 0;
 
               return (
-                <tr key={m.matchId} onClick={() => onOpenMatch?.(m.matchId)} style={{ cursor: "pointer" }}>
+                <tr key={m.matchId} onClick={() => { if (deleting) toggleSelect(m.matchId); else onOpenMatch?.(m.matchId); }} style={{ cursor: "pointer" }}>
+                  {deleting && <td onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.has(m.matchId)} onChange={() => toggleSelect(m.matchId)} /></td>}
                   <td style={{ fontWeight: 600 }}>{cs2ssMapLabel(m.map)}{dm && <span className="dm-tag">DM</span>}</td>
                   <td style={{ color: "var(--text-secondary)", fontSize: 12, whiteSpace: "nowrap" }}>{fmtDT(m.startedAt)}</td>
                   <td>

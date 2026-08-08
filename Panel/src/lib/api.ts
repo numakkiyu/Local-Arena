@@ -346,6 +346,20 @@ export type AppConfig = {
   experimental_stickers_enabled?: boolean;
 };
 
+export type TeamLineupInput = {
+  enabled: boolean;
+  friendly_team_index: string | null;
+  enemy_team_index: string | null;
+  excluded_player: string | null;
+};
+
+export type TeamLineupState = {
+  enabled: boolean;
+  friendly_team_index: string | null;
+  enemy_team_index: string | null;
+  excluded_player: string | null;
+};
+
 export type AppearanceStyle = "paper" | "clean" | "compact" | "immersive";
 export type AppearancePalette = "terracotta" | "sky" | "monochrome" | "grass" | "mist" | "berry" | "custom";
 export type AppearanceFont = "humanist" | "modern" | "clear" | "classic" | "technical" | "custom";
@@ -697,6 +711,14 @@ export const api = {
     invoke<PresetsState>("set_aim", { csgo, value }),
   setNades: (csgo: string, value: NadesValue) =>
     invoke<PresetsState>("set_nades", { csgo, value }),
+  setTeamLineup: (csgo: string, input: TeamLineupInput) =>
+    invoke<TeamLineupState>("set_team_lineup", { csgo, input }),
+  getTeamLineup: (csgo: string) =>
+    invoke<TeamLineupState>("get_team_lineup", { csgo }),
+  setTimescaleToggle: (csgo: string, enabled: boolean) =>
+    invoke<boolean>("set_timescale_toggle", { csgo, enabled }),
+  getTimescaleToggle: () =>
+    invoke<boolean>("get_timescale_toggle"),
   getDropKnives: (csgo: string) =>
     invoke<DropKnivesState>("get_drop_knives", { csgo }),
   setDropKnives: (csgo: string, bindKey: string, selected: number[]) =>
@@ -738,4 +760,6 @@ export const api = {
   getCs2ssConfig: (csgo: string) => invoke<Cs2ssConfig>("get_cs2ss_config", { csgo }),
   saveCs2ssConfig: (csgo: string, config: Cs2ssConfig) => invoke<void>("save_cs2ss_config", { csgo, config }),
   getCs2ssDmOverview: (csgo: string, steamId: string) => invoke<Cs2ssDmOverview>("get_cs2ss_dm_overview", { csgo, steamId }),
+  deleteCs2ssMatches: (csgo: string, matchIds: number[]) =>
+    invoke<number>("delete_cs2ss_matches", { csgo, matchIds }),
 };

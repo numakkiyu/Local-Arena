@@ -26,18 +26,18 @@ export function cs2ssCalcRating(
   const kast = (extras.kastRounds ?? 0) / rounds;
   const tradeRate = (extras.tradeKills ?? 0) / rounds;
   const multikillImpact = (
-    (extras.multikill2 ?? 0) * 0.025 +
-    (extras.multikill3 ?? 0) * 0.06 +
-    (extras.multikill4 ?? 0) * 0.11 +
-    (extras.multikill5 ?? 0) * 0.18
-  ) / rounds;
-  const clutchImpact = (extras.clutchesWon ?? 0) * 0.16 / rounds;
+    (extras.multikill2 ?? 0) * 0.03 +
+    (extras.multikill3 ?? 0) * 0.08 +
+    (extras.multikill4 ?? 0) * 0.15 +
+    (extras.multikill5 ?? 0) * 0.28
+  );
+  const clutchImpact = (extras.clutchesWon ?? 0) * 0.22;
   const clutchConversion = extras.clutchAttempts
-    ? Math.min(0.05, (extras.clutchesWon ?? 0) / extras.clutchAttempts * 0.05)
+    ? Math.min(0.06, (extras.clutchesWon ?? 0) / extras.clutchAttempts * 0.06)
     : 0;
   const rating = 1
     + (kpr - 0.72) * 0.52
-    + (adr - 75) / 100 * 0.42
+    + (adr - 68) / 100 * 0.75
     - (dpr - 0.68) * 0.32
     + (apr - 0.18) * 0.14
     + (kast - 0.70) * 0.30
@@ -45,7 +45,7 @@ export function cs2ssCalcRating(
     + multikillImpact
     + clutchImpact
     + clutchConversion;
-  return Math.round(Math.max(0, Math.min(3, rating)) * 100) / 100;
+  return Math.round(Math.max(0, rating) * 100) / 100;
 }
 
 export function cs2ssCalcKd(kills: number, deaths: number): number {

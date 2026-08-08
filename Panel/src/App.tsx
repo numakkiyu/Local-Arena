@@ -162,7 +162,7 @@ export default function App() {
           ) : view === "stickers" ? (
             <StickersPanel />
           ) : view === "match" ? (
-            <MatchPanel onOpenInstallation={() => setView("settings")} onOpenHistory={() => setView("matchHistory")} />
+            <MatchPanel onOpenInstallation={() => setView("settings")} onOpenHistory={() => setView("matchHistory")} onOpenLineup={() => setView("presets")} />
           ) : view === "matchHistory" ? (
             <MatchHistoryPanel />
           ) : view === "stats" ? (
